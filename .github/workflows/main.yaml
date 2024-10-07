@@ -38,6 +38,7 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: v1.0.0  # Use a dynamic version if possible
           tag: v1.0.0  # Use a dynamic version if possible
           files: react_native/android/app/build/outputs/apk/release/app-release.apk  # Adjust path to your APK
         env:
