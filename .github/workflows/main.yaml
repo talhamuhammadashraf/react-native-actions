@@ -27,5 +27,11 @@ jobs:
         with: 
           node-version: '20'
 
+      - name: Check location
+        run: pwd
+
+      # - name: Run Yarn Install
+      #   run: yarn 
+
       - name: Say Hello to the World
         run: echo "Hello, World!"
