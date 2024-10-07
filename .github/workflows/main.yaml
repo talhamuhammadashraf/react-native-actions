@@ -32,16 +32,25 @@ jobs:
 
       - name: Build App
         run: cd react_native/android && ./gradlew assembleRelease
+
+      - name: Upload APK to Artifacts
+        uses: actions/upload-artifact@v4
+        with: 
+            name: android_apk
+            path: react_native/android/app/build/outputs/apk/release/app-release.apk
+            retention-days: 3
       # - name: Check location
       #   run: pwd
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v1.0.0  # Use a dynamic version if possible
-          tag: v1.0.0  # Use a dynamic version if possible
-          files: react_native/android/app/build/outputs/apk/release/app-release.apk  # Adjust path to your APK
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Create Release
+      #   id: create_release
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     tag_name: v1.0.0  # Use a dynamic version if possible
+      #     tag: v1.0.0  # Use a dynamic version if possible
+      #     files: react_native/android/app/build/outputs/apk/release/app-release.apk  # Adjust path to your APK
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # - name: Print Success Message
       #   run: echo "ANDROID BUILD SUCCESS"
