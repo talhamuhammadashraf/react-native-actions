@@ -31,7 +31,7 @@ jobs:
       #   run: pwd
 
       - name: Run Yarn Install
-        run: cd react-native && yarn
+        run: cd react_native && yarn
 
       - name: Say Hello to the World
         run: echo "Hello, World!"
