@@ -13,5 +13,8 @@ jobs:
       - name: Get Your Code
         uses: actions/checkout@v2
 
+      - name: Validate gradle
+        uses: gradle/actions/wrapper-validation@v3
+
       - name: Say Hello to the World
         run: echo "Hello, World!"
