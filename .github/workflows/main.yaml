@@ -22,5 +22,10 @@ jobs:
           java-version: '21'
           distribution: 'zulu'
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with: 
+          node-version: '20'
+
       - name: Say Hello to the World
         run: echo "Hello, World!"
