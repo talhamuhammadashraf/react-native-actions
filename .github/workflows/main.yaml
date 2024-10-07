@@ -34,6 +34,13 @@ jobs:
         run: cd react_native/android && ./gradlew assembleRelease
       # - name: Check location
       #   run: pwd
-
-      - name: Print Success Message
-        run: echo "ANDROID BUILD SUCCESS"
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag: v1.0.0  # Use a dynamic version if possible
+          files: react_native/android/app/build/outputs/apk/release/app-release.apk  # Adjust path to your APK
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Print Success Message
+      #   run: echo "ANDROID BUILD SUCCESS"
