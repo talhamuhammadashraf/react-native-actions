@@ -24,7 +24,7 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
-import Component from "@components"
+import Component from './src/components';
 
 type SectionProps = PropsWithChildren<{
   title: string;
