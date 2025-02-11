@@ -82,13 +82,7 @@ jobs:
                 ENVFILE=.env.professional
             fi
 
-            ENVFILE=$ENVFILE ./gradlew assembleRelease
-
-      - name: Check Available Build Directories
-        run: |
-          echo "Listing all generated files in build..."
-          find android/app/build -type f
-      
+            ENVFILE=$ENVFILE ./gradlew assembleRelease      
 
       - name: Sign APK
         run: |
@@ -104,7 +98,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: android/app/build/outputs/apk/release/app-signed-release-.apk
 
 # jobs:
 #   build-android:
