@@ -96,9 +96,9 @@ jobs:
           -keystore android/app/my-release-key.keystore \
           -storepass ${{ secrets.RELEASE_KEYSTORE_PASSWORD }} \
           -keypass ${{ secrets.RELEASE_KEY_PASSWORD }} \
-          android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          android/app/build/outputs/apk/release/app-release.apk \
           ${{ secrets.RELEASE_KEYSTORE_ALIAS }} \
-          -signedjar android/app/build/outputs/apk/release/app-release.apk
+          -signedjar android/app/build/outputs/apk/release/app-signed-release.apk
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
