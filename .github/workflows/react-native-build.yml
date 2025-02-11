@@ -72,16 +72,25 @@ jobs:
 
       - name: Build Release APK
         run: |
-          cd android && ./gradlew assembleRelease
+          cd android
+            if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
+                ENVFILE=.env.personal
+            elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
+                ENVFILE=.env.professional
+            fi
+
+            ENVFILE=$ENVFILE ./gradlew assembleRelease
+
 
       - name: Sign APK
         run: |
-          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
-            -keystore android/app/my-release-key.keystore \
-            -storepass ${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-            -keypass ${{ secrets.ANDROID_KEY_PASSWORD }} \
-            android/app/build/outputs/apk/release/app-release-unsigned.apk \
-            ${{ secrets.ANDROID_KEY_ALIAS }}
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore android/app/my-release-key.keystore \
+          -storepass ${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+          -keypass ${{ secrets.ANDROID_KEY_PASSWORD }} \
+          ${{ secrets.ANDROID_KEY_ALIAS }} \
+          android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          -signedjar android/app/build/outputs/apk/release/app-release.apk
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
