@@ -1,50 +1,156 @@
 name: Build
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Choose the environment to deploy to (personal, professional)'
+        required: true
+        default: 'personal'
+        type: choice
+        options:
+          - personal
+          - professional
 
 jobs:
-  build-android:
+  build:
+    name: Build Android APK/AAB
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK
+      - name: Set Up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: "zulu"
+          java-version: "17"
 
-      - name: Set up Node.js
+      - name: Set Up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
+          cache: "yarn"
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: yarn
 
-      - name: Build Android
-        run: cd android && ./gradlew assembleRelease
+      - name: Copy secret files
+        env:
+          ENV_PERSONAL_BASE64: ${{ secrets.ENV_PERSONAL }}
+          ENV_PROFESSIONAL_BASE64: ${{ secrets.ENV_PROFESSIONAL }}
+          
+        run: |
+          ENV_PERSONAL_FILE="$RUNNER_TEMP/.env.personal"
+          ENV_PROFESSIONAL_FILE="$RUNNER_TEMP/.env.professional"
+          
+          if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
+          echo -n "$ENV_PERSONAL_BASE64" | base64 --decode > $ENV_PERSONAL_FILE
+          echo -n "Getting personal env"
+          cp $ENV_PERSONAL_FILE $GITHUB_WORKSPACE/.env.personal
+          cd android && export ENVFILE=.env.personal
+          elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
+          echo -n "$ENV_PROFESSIONAL_BASE64" | base64 --decode > $ENV_PROFESSIONAL_FILE
+          echo -n "Getting professional env"
+          cp $ENV_PROFESSIONAL_FILE $GITHUB_WORKSPACE/.env.professional
+          cd android && export ENVFILE=.env.professional
+          fi
 
-  build-ios:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Decode & Restore Keystore
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+        run: |
+          echo "$ANDROID_KEYSTORE" | base64 --decode > android/app/my-release-key.keystore
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Update Build Number (Version Code)
+        run: |
+          FILE=android/app/build.gradle
+          VERSION_CODE=$(grep -oP 'versionCode \K\d+' $FILE)
+          NEW_VERSION_CODE=$((VERSION_CODE + 1))
+          sed -i "s/versionCode $VERSION_CODE/versionCode $NEW_VERSION_CODE/g" $FILE
+
+      - name: Build Release APK
+        run: |
+          cd android && ./gradlew assembleRelease
+
+      - name: Sign APK
+        run: |
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+            -keystore android/app/my-release-key.keystore \
+            -storepass ${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+            -keypass ${{ secrets.ANDROID_KEY_PASSWORD }} \
+            android/app/build/outputs/apk/release/app-release-unsigned.apk \
+            ${{ secrets.ANDROID_KEY_ALIAS }}
+
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
         with:
-          node-version: '22'
+          name: android-release-apk
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
 
-      - name: Install dependencies
-        run: yarn
+# jobs:
+#   build-android:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      - name: Install CocoaPods
-        run: cd ios && pod install
+#       - name: Set up JDK
+#         uses: actions/setup-java@v4
+#         with:
+#           distribution: 'zulu'
+#           java-version: '17'
 
-      - name: Build iOS
-        run: xcodebuild -workspace ios/react_native.xcworkspace -scheme react_native -sdk iphoneos -configuration Release clean build
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '22'
+
+#       - name: Set Build Number
+#         id: build_number
+#         run: |
+#           DATE=$(date +'%d%m%y')
+#           INCREMENTAL_NUMBER=$(printf "%02d" ${{ github.run_number }})
+#           BUILD_NUMBER="${DATE}${INCREMENTAL_NUMBER}"
+#           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+
+#       - name: Update Android Build Number
+#         run: |
+#           sed -i "s/versionCode [0-9]\+/versionCode $BUILD_NUMBER/" android/app/build.gradle
+
+#       - name: Copy secret files
+#         env:
+#           ENV_PERSONAL_FILE_BASE64: ${{ secrets }}
+
+#         run: |
+#           ENV_FILE="$RUNNER_TEMP/env.ts"
+#           ENV_DEV_FILE="$RUNNER_TEMP/env.dev.ts"
+#           ENV_STAGE_FILE="$RUNNER_TEMP/env.staging.ts"
+#           ENV_PROD_FILE="$RUNNER_TEMP/env.prod.ts"
+
+#       - name: Install dependencies
+#         run: yarn
+
+#       - name: Build Android
+#         run: cd android && ./gradlew assembleRelease
+
+  # build-ios:
+  #   runs-on: macos-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '22'
+
+  #     - name: Install dependencies
+  #       run: yarn
+
+  #     - name: Install CocoaPods
+  #       run: cd ios && pod install
+
+  #     - name: Build iOS
+  #       run: xcodebuild -workspace ios/react_native.xcworkspace -scheme react_native -sdk iphoneos -configuration Release clean build
