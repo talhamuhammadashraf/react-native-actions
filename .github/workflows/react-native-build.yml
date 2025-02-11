@@ -60,6 +60,9 @@ jobs:
       - name: Decode & Restore Keystore
         env:
           ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEYSTORE_ALIAS: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           echo "$ANDROID_KEYSTORE" | base64 --decode > android/app/my-release-key.keystore
 
@@ -86,9 +89,9 @@ jobs:
         run: |
           jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
           -keystore android/app/my-release-key.keystore \
-          -storepass ${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-          -keypass ${{ secrets.ANDROID_KEY_PASSWORD }} \
-          ${{ secrets.ANDROID_KEY_ALIAS }} \
+          -storepass ${{ secrets.RELEASE_KEYSTORE_PASSWORD }} \
+          -keypass ${{ secrets.RELEASE_KEY_PASSWORD }} \
+          ${{ secrets.RELEASE_KEYSTORE_ALIAS }} \
           android/app/build/outputs/apk/release/app-release-unsigned.apk \
           -signedjar android/app/build/outputs/apk/release/app-release.apk
 
