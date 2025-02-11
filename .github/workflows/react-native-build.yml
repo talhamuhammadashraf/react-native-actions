@@ -73,10 +73,6 @@ jobs:
           NEW_VERSION_CODE=$((VERSION_CODE + 1))
           sed -i "s/versionCode $VERSION_CODE/versionCode $NEW_VERSION_CODE/g" $FILE
 
-      - name: Verify APK path
-        run: |
-          echo "APK Path: $(pwd)/android/app/build/outputs/apk/release/app-release-unsigned.apk"
-
       - name: Build Release APK
         run: |
           cd android
@@ -86,7 +82,13 @@ jobs:
                 ENVFILE=.env.professional
             fi
 
-            ENVFILE=$ENVFILE ./gradlew assembleRelease && ls -l android/app/build/outputs/apk/release/
+            ENVFILE=$ENVFILE ./gradlew assembleRelease
+
+      - name: Check Available Build Directories
+        run: |
+          echo "Listing all generated files in build..."
+          find android/app/build -type f
+      
 
       - name: Sign APK
         run: |
