@@ -67,12 +67,14 @@ jobs:
         run: |
           cd android
             if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
-                export ENVFILE=.env.personal
+            export ENVFILE=../.env.personal
+            ./gradlew assembleRelease
+
             elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
-                export ENVFILE=.env.professional
+            export ENVFILE=../.env.professional
+            ./gradlew assembleRelease
             fi
 
-            ./gradlew assembleRelease
 
       - name: Sign APK
         uses: upup-company/apksigner-android@v1
