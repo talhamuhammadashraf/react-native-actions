@@ -50,22 +50,11 @@ jobs:
           echo -n "$ENV_PERSONAL_BASE64" | base64 --decode > $ENV_PERSONAL_FILE
           echo -n "Getting personal env"
           cp $ENV_PERSONAL_FILE $GITHUB_WORKSPACE/.env.personal
-          cd android && export ENVFILE=.env.personal
           elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
           echo -n "$ENV_PROFESSIONAL_BASE64" | base64 --decode > $ENV_PROFESSIONAL_FILE
           echo -n "Getting professional env"
           cp $ENV_PROFESSIONAL_FILE $GITHUB_WORKSPACE/.env.professional
-          cd android && export ENVFILE=.env.professional
           fi
-
-      # - name: Decode & Restore Keystore
-      #   env:
-      #     ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
-      #     RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-      #     RELEASE_KEYSTORE_ALIAS: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
-      #     RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-      #   run: |
-      #     echo "$ANDROID_KEYSTORE" | base64 --decode > android/app/my-release-key.keystore
 
       - name: Update Build Number (Version Code)
         run: |
@@ -78,12 +67,12 @@ jobs:
         run: |
           cd android
             if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
-                ENVFILE=.env.personal
+                export ENVFILE=.env.personal
             elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
-                ENVFILE=.env.professional
+                export ENVFILE=.env.professional
             fi
 
-            ENVFILE=$ENVFILE ./gradlew assembleRelease      
+            ./gradlew assembleRelease
 
       - name: Sign APK
         uses: upup-company/apksigner-android@v1
@@ -99,66 +88,11 @@ jobs:
           # override default build-tools version (29.0.3) -- optional
           BUILD_TOOLS_VERSION: "34.0.0"
 
-        # run: |
-        #   jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-        #   -keystore android/app/my-release-key.keystore \
-        #   -storepass ${{ secrets.RELEASE_KEYSTORE_PASSWORD }} \
-        #   -keypass ${{ secrets.RELEASE_KEY_PASSWORD }} \
-        #   android/app/build/outputs/apk/release/app-release.apk \
-        #   ${{ secrets.RELEASE_KEYSTORE_ALIAS }} \
-        #   -signedjar android/app/build/outputs/apk/release/app-signed-release.apk
-
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
           path: ${{steps.sign_app.outputs.signedReleaseFile}}
-
-# jobs:
-#   build-android:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
-
-#       - name: Set up JDK
-#         uses: actions/setup-java@v4
-#         with:
-#           distribution: 'zulu'
-#           java-version: '17'
-
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '22'
-
-#       - name: Set Build Number
-#         id: build_number
-#         run: |
-#           DATE=$(date +'%d%m%y')
-#           INCREMENTAL_NUMBER=$(printf "%02d" ${{ github.run_number }})
-#           BUILD_NUMBER="${DATE}${INCREMENTAL_NUMBER}"
-#           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-
-#       - name: Update Android Build Number
-#         run: |
-#           sed -i "s/versionCode [0-9]\+/versionCode $BUILD_NUMBER/" android/app/build.gradle
-
-#       - name: Copy secret files
-#         env:
-#           ENV_PERSONAL_FILE_BASE64: ${{ secrets }}
-
-#         run: |
-#           ENV_FILE="$RUNNER_TEMP/env.ts"
-#           ENV_DEV_FILE="$RUNNER_TEMP/env.dev.ts"
-#           ENV_STAGE_FILE="$RUNNER_TEMP/env.staging.ts"
-#           ENV_PROD_FILE="$RUNNER_TEMP/env.prod.ts"
-
-#       - name: Install dependencies
-#         run: yarn
-
-#       - name: Build Android
-#         run: cd android && ./gradlew assembleRelease
 
   # build-ios:
   #   runs-on: macos-latest
