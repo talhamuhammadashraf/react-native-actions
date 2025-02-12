@@ -64,18 +64,6 @@ function App(): React.JSX.Element {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
-  const [data, setData] = useState<{login: string}>();
-  useEffect(() => {
-    axios
-      .get(Config.API_URL!)
-      .then(res => {
-        setData(res.data);
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  }, []);
-
   return (
     <SafeAreaView style={backgroundStyle}>
       <StatusBar
@@ -85,25 +73,15 @@ function App(): React.JSX.Element {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
-        <Header />
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
           {
             <View>
-              <Text>{data?.login}</Text>
+              <Text>{Config.API_URL}</Text>
             </View>
           }
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
           <LearnMoreLinks />
           <Component />
         </View>
