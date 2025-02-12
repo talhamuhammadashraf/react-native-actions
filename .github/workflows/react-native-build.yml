@@ -26,6 +26,7 @@ jobs:
         with:
           distribution: "zulu"
           java-version: "17"
+          cache: "gradle"
 
       - name: Set Up Node.js
         uses: actions/setup-node@v4
@@ -94,6 +95,9 @@ jobs:
           alias: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
           keyStorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        env:
+          # override default build-tools version (29.0.3) -- optional
+          BUILD_TOOLS_VERSION: "34.0.0"
 
         # run: |
         #   jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
