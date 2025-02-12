@@ -57,14 +57,14 @@ jobs:
           cd android && export ENVFILE=.env.professional
           fi
 
-      - name: Decode & Restore Keystore
-        env:
-          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
-          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          RELEASE_KEYSTORE_ALIAS: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: |
-          echo "$ANDROID_KEYSTORE" | base64 --decode > android/app/my-release-key.keystore
+      # - name: Decode & Restore Keystore
+      #   env:
+      #     ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+      #     RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+      #     RELEASE_KEYSTORE_ALIAS: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
+      #     RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      #   run: |
+      #     echo "$ANDROID_KEYSTORE" | base64 --decode > android/app/my-release-key.keystore
 
       - name: Update Build Number (Version Code)
         run: |
@@ -85,20 +85,30 @@ jobs:
             ENVFILE=$ENVFILE ./gradlew assembleRelease      
 
       - name: Sign APK
-        run: |
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore android/app/my-release-key.keystore \
-          -storepass ${{ secrets.RELEASE_KEYSTORE_PASSWORD }} \
-          -keypass ${{ secrets.RELEASE_KEY_PASSWORD }} \
-          android/app/build/outputs/apk/release/app-release.apk \
-          ${{ secrets.RELEASE_KEYSTORE_ALIAS }} \
-          -signedjar android/app/build/outputs/apk/release/app-signed-release.apk
+        uses: upup-company/apksigner-android@v1
+
+        id: sign_app
+        with:
+          releaseDirectory: app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE }}
+          alias: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
+          keyStorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.RELEASE_KEY_PASSWORD }}
+
+        # run: |
+        #   jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+        #   -keystore android/app/my-release-key.keystore \
+        #   -storepass ${{ secrets.RELEASE_KEYSTORE_PASSWORD }} \
+        #   -keypass ${{ secrets.RELEASE_KEY_PASSWORD }} \
+        #   android/app/build/outputs/apk/release/app-release.apk \
+        #   ${{ secrets.RELEASE_KEYSTORE_ALIAS }} \
+        #   -signedjar android/app/build/outputs/apk/release/app-signed-release.apk
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
-          path: android/app/build/outputs/apk/release/app-signed-release.apk
+          path: ${{steps.sign_app.outputs.signedReleaseFile}}
 
 # jobs:
 #   build-android:
