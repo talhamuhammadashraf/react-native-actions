@@ -6,11 +6,12 @@ on:
       environment:
         description: 'Choose the environment to deploy to (personal, professional)'
         required: true
-        default: 'personal'
+        default: 'qa'
         type: choice
         options:
-          - personal
-          - professional
+          - dev
+          - qa
+          - prod
 
 jobs:
   build:
@@ -40,30 +41,19 @@ jobs:
 
       - name: Copy Secret Files
         env:
-          ENV_PERSONAL_BASE64: ${{ secrets.ENV_PERSONAL }}
-          ENV_PROFESSIONAL_BASE64: ${{ secrets.ENV_PROFESSIONAL }}
+          ENV_BASE64: ${{ secrets.ENV }}
         run: |
           ENV_FILE="$RUNNER_TEMP/.env"
-
-          if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
-            echo -n "$ENV_PERSONAL_BASE64" | base64 --decode > $ENV_FILE
-            echo "✅ Using personal environment"
-          elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
-            echo -n "$ENV_PROFESSIONAL_BASE64" | base64 --decode > $ENV_FILE
-            echo "✅ Using professional environment"
-          else
-            echo "❌ Invalid environment selected!"
-            exit 1
-          fi
-
-          cp $ENV_FILE $GITHUB_WORKSPACE/.env  #  Copy to workspace root
+          echo -n "$ENV_BASE64" | base64 --decode > $ENV_FILE
+          echo "Environment file created."
+          cp $ENV_FILE $GITHUB_WORKSPACE/.env 
 
       - name: Verify .env File
         run: |
           if [ -f .env ]; then
-            echo "✅ .env file exists!"
+            echo ".env file exists!"
           else
-            echo "❌ .env file is missing!"
+            echo ".env file is missing!"
             exit 1
           fi
 
@@ -98,8 +88,7 @@ jobs:
 
       - name: Extract APK and Debug ENV
         run: |
-          unzip -p ${{ steps.sign_app.outputs.signedReleaseFile }} | strings | grep API_URL        
-
+          unzip -p ${{ steps.sign_app.outputs.signedReleaseFile }} res/values/strings.xml | grep ENV
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
