@@ -83,7 +83,7 @@ jobs:
 
       - name: Extract APK and Debug ENV
         run: |
-          unzip -p android/app/build/outputs/apk/release/app-release.apk | strings | grep API_URL        
+          unzip -p ${{ steps.sign_app.outputs.signedReleaseFile }} | strings | grep API_URL        
 
       - name: Verify APK Path
         run: |
