@@ -14,9 +14,92 @@ on:
           - prod
 
 jobs:
-  build:
-    name: Build Android APK/AAB
+  build_android:
+    name: Build Android 
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}  # This enables environment-specific secrets
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+          cache: "gradle"
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+
+      - name: Install Dependencies
+        run: |
+          rm yarn.lock
+          rm -rf node_modules
+          yarn
+
+      - name: Copy Secret Files
+        env:
+          ENV_BASE64: ${{ secrets.ENV }}
+        run: |
+          ENV_FILE="$RUNNER_TEMP/.env"
+          echo -n "$ENV_BASE64" | base64 --decode > $ENV_FILE
+          echo "Environment file created from ${{ github.event.inputs.environment }}"
+          cp $ENV_FILE $GITHUB_WORKSPACE/.env 
+
+      - name: Verify .env File
+        run: |
+          if [ -f .env ]; then
+            echo ".env file exists!"
+          else
+            echo ".env file is missing!"
+            exit 1
+          fi
+
+      - name: Update Build Number (Version Code)
+        run: |
+          FILE=android/app/build.gradle
+          VERSION_CODE=$(grep -oP 'versionCode \K\d+' $FILE)
+          NEW_VERSION_CODE=$((VERSION_CODE + 1))
+          sed -i "s/versionCode $VERSION_CODE/versionCode $NEW_VERSION_CODE/g" $FILE
+
+      - name: Build Release APK
+        run: |
+          cd android
+          export ENVFILE=../.env
+          ./gradlew clean
+          ./gradlew assembleRelease
+
+      - name: Sign APK
+        uses: upup-company/apksigner-android@v1
+        id: sign_app
+        with:
+          releaseDirectory: android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE }}
+          alias: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
+          keyStorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
+
+      - name: Verify APK Path
+        run: |
+          echo "APK Path: ${{ steps.sign_app.outputs.signedReleaseFile }}"
+
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+
+
+  build_ios:
+    name: Build iOS 
+    runs-on: macos-latest
     environment: ${{ github.event.inputs.environment }}  # This enables environment-specific secrets
 
     steps:
@@ -56,38 +139,3 @@ jobs:
             echo ".env file is missing!"
             exit 1
           fi
-
-      - name: Update Build Number (Version Code)
-        run: |
-          FILE=android/app/build.gradle
-          VERSION_CODE=$(grep -oP 'versionCode \K\d+' $FILE)
-          NEW_VERSION_CODE=$((VERSION_CODE + 1))
-          sed -i "s/versionCode $VERSION_CODE/versionCode $NEW_VERSION_CODE/g" $FILE
-
-      - name: Build Release APK
-        run: |
-          cd android
-          export ENVFILE=../.env  # Unified .env reference
-          ./gradlew assembleRelease
-
-      - name: Sign APK
-        uses: upup-company/apksigner-android@v1
-        id: sign_app
-        with:
-          releaseDirectory: android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE }}
-          alias: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
-          keyStorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: "34.0.0"
-
-      - name: Verify APK Path
-        run: |
-          echo "APK Path: ${{ steps.sign_app.outputs.signedReleaseFile }}"
-
-      - name: Upload APK as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-release-apk
-          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
