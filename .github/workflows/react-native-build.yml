@@ -95,6 +95,20 @@ jobs:
             exit 1
           fi
 
+      - name: Debug Secrets (Check if they exist)
+        run: |
+          if [ -z "${{ secrets.ENV_PERSONAL }}" ]; then
+            echo "❌ ENV_PERSONAL is EMPTY or NOT SET!"
+          else
+            echo "✅ ENV_PERSONAL is set!"
+          fi
+      
+          if [ -z "${{ secrets.ENV_PROFESSIONAL }}" ]; then
+            echo "❌ ENV_PROFESSIONAL is EMPTY or NOT SET!"
+          else
+            echo "✅ ENV_PROFESSIONAL is set!"
+          fi
+        
       # - name: Update Build Number (Version Code)
       #   run: |
       #     FILE=android/app/build.gradle
