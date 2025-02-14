@@ -86,9 +86,8 @@ jobs:
         run: |
           echo "APK Path: ${{ steps.sign_app.outputs.signedReleaseFile }}"
 
-      - name: Extract APK and Debug ENV
-        run: |
-          unzip -p ${{ steps.sign_app.outputs.signedReleaseFile }} res/values/strings.xml | grep ENV
+      - name: Extract and Debug ENV
+        run: unzip -p ${{ steps.sign_app.outputs.signedReleaseFile }} | strings | grep ENV        
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
