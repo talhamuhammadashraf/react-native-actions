@@ -40,12 +40,23 @@ jobs:
 
       - name: Copy Secret Files
         env:
-          ENV_BASE64: ${{ secrets.ENV_BASE64 }}  # ✅ Single variable (assumed stored per environment)
+          ENV_PERSONAL_BASE64: ${{ secrets.ENV_PERSONAL }}
+          ENV_PROFESSIONAL_BASE64: ${{ secrets.ENV_PROFESSIONAL }}
         run: |
           ENV_FILE="$RUNNER_TEMP/.env"
-          echo -n "$ENV_BASE64" | base64 --decode > $ENV_FILE
-          echo "Environment file created."
-          cp $ENV_FILE $GITHUB_WORKSPACE/.env  # ✅ Copy to root workspace
+
+          if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
+            echo -n "$ENV_PERSONAL_BASE64" | base64 --decode > $ENV_FILE
+            echo "✅ Using personal environment"
+          elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
+            echo -n "$ENV_PROFESSIONAL_BASE64" | base64 --decode > $ENV_FILE
+            echo "✅ Using professional environment"
+          else
+            echo "❌ Invalid environment selected!"
+            exit 1
+          fi
+
+          cp $ENV_FILE $GITHUB_WORKSPACE/.env  #  Copy to workspace root
 
       - name: Verify .env File
         run: |
@@ -81,13 +92,14 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "34.0.0"
 
+      - name: Verify APK Path
+        run: |
+          echo "APK Path: ${{ steps.sign_app.outputs.signedReleaseFile }}"
+
       - name: Extract APK and Debug ENV
         run: |
           unzip -p ${{ steps.sign_app.outputs.signedReleaseFile }} | strings | grep API_URL        
 
-      - name: Verify APK Path
-        run: |
-          echo "APK Path: ${{ steps.sign_app.outputs.signedReleaseFile }}"
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
