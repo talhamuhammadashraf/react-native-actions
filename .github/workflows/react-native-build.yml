@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Choose the environment to deploy to (personal, professional)'
+        description: 'Choose the environment to deploy to (dev, qa, prod)'
         required: true
         default: 'qa'
         type: choice
@@ -17,7 +17,7 @@ jobs:
   build_android:
     name: Build Android 
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}  # This enables environment-specific secrets
+    environment: ${{ github.event.inputs.environment }}
 
     steps:
       - name: Checkout Code
@@ -92,11 +92,10 @@ jobs:
           name: android-release-apk
           path: ${{ steps.sign_app.outputs.signedReleaseFile }}
 
-
   build_ios:
     name: Build iOS 
     runs-on: macos-latest
-    environment: ${{ github.event.inputs.environment }}  # This enables environment-specific secrets
+    environment: ${{ github.event.inputs.environment }}
 
     steps:
       - name: Checkout Code
@@ -128,3 +127,44 @@ jobs:
             echo ".env file is missing!"
             exit 1
           fi
+
+      - name: Install iOS Distribution Certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+        run: |
+          echo "$CERTIFICATE_BASE64" | base64 --decode > ios_certificate.p12
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security import ios_certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+
+      - name: Install Provisioning Profile
+        env:
+          PROFILE_BASE64: ${{ secrets.IOS_ADHOC_PROFILE }}
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+
+      - name: Build iOS App
+        run: |
+          xcodebuild -workspace ios/react_native.xcworkspace \
+                     -scheme react_native \
+                     -sdk iphoneos \
+                     -configuration Release \
+                     -archivePath build/react_native.xcarchive \
+                     archive
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+                     -archivePath build/react_native.xcarchive \
+                     -exportOptionsPlist ios/exportOptions.plist \
+                     -exportPath build
+
+      - name: Upload IPA as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release-ipa
+          path: build/react_native.ipa
