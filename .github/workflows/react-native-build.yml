@@ -56,65 +56,64 @@ jobs:
           cp $ENV_PROFESSIONAL_FILE $GITHUB_WORKSPACE/.env.professional
           fi
 
-      - name: Update Build Number (Version Code)
+      - name: Verify Secret Variables
         run: |
-          FILE=android/app/build.gradle
-          VERSION_CODE=$(grep -oP 'versionCode \K\d+' $FILE)
-          NEW_VERSION_CODE=$((VERSION_CODE + 1))
-          sed -i "s/versionCode $VERSION_CODE/versionCode $NEW_VERSION_CODE/g" $FILE
-
-      - name: Build Release APK
-        run: |
-          cd android
-            if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
-            export ENVFILE=../.env.personal
-            ./gradlew assembleRelease
-
-            elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
-            export ENVFILE=../.env.professional
-            ./gradlew assembleRelease
-            fi
-
-
-      - name: Sign APK
-        uses: upup-company/apksigner-android@v1
-
-        id: sign_app
-        with:
-          releaseDirectory: android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE }}
-          alias: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
-          keyStorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          echo "Length of ENV_PERSONAL: ${#ENV_PERSONAL_BASE64}"
+          echo "Length of ENV_PROFESSIONAL: ${#ENV_PROFESSIONAL_BASE64}"
         env:
-          # override default build-tools version (29.0.3) -- optional
-          BUILD_TOOLS_VERSION: "34.0.0"
+          ENV_PERSONAL_BASE64: ${{ secrets.ENV_PERSONAL }}
+          ENV_PROFESSIONAL_BASE64: ${{ secrets.ENV_PROFESSIONAL }}
+        
+      - name: Read .env File
+        run: |
+          if [ -f .env ]; then
+            echo ".env file exists!"
+            cat .env  # Show its contents (except secrets)
+          else
+            echo ".env file is missing!"
+            exit 1
+          fi
 
-      - name: Verify APK path
-        run: echo ${{steps.sign_app.outputs.signedReleaseFile}}
+      # - name: Update Build Number (Version Code)
+      #   run: |
+      #     FILE=android/app/build.gradle
+      #     VERSION_CODE=$(grep -oP 'versionCode \K\d+' $FILE)
+      #     NEW_VERSION_CODE=$((VERSION_CODE + 1))
+      #     sed -i "s/versionCode $VERSION_CODE/versionCode $NEW_VERSION_CODE/g" $FILE
 
-      - name: Upload APK as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-release-apk
-          path: ${{steps.sign_app.outputs.signedReleaseFile}}
+      # - name: Build Release APK
+      #   run: |
+      #     cd android
+      #       if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
+      #       export ENVFILE=../.env.personal
+      #       ./gradlew assembleRelease
 
-  # build-ios:
-  #   runs-on: macos-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+      #       elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
+      #       export ENVFILE=../.env.professional
+      #       ./gradlew assembleRelease
+      #       fi
 
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '22'
 
-  #     - name: Install dependencies
-  #       run: yarn
+      # - name: Sign APK
+      #   uses: upup-company/apksigner-android@v1
 
-  #     - name: Install CocoaPods
-  #       run: cd ios && pod install
+      #   id: sign_app
+      #   with:
+      #     releaseDirectory: android/app/build/outputs/apk/release
+      #     signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE }}
+      #     alias: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
+      #     keyStorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+      #     keyPassword: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      #   env:
+      #     # override default build-tools version (29.0.3) -- optional
+      #     BUILD_TOOLS_VERSION: "34.0.0"
 
-  #     - name: Build iOS
-  #       run: xcodebuild -workspace ios/react_native.xcworkspace -scheme react_native -sdk iphoneos -configuration Release clean build
+      # - name: Verify APK path
+      #   run: echo ${{steps.sign_app.outputs.signedReleaseFile}}
+
+      # - name: Upload APK as Artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: android-release-apk
+      #     path: ${{steps.sign_app.outputs.signedReleaseFile}}
+
