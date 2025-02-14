@@ -45,7 +45,7 @@ jobs:
         run: |
           ENV_FILE="$RUNNER_TEMP/.env"
           echo -n "$ENV_BASE64" | base64 --decode > $ENV_FILE
-          echo "Environment file created."
+          echo "Environment file created from ${{ github.event.inputs.environment }}"
           cp $ENV_FILE $GITHUB_WORKSPACE/.env 
 
       - name: Verify .env File
@@ -85,9 +85,6 @@ jobs:
       - name: Verify APK Path
         run: |
           echo "APK Path: ${{ steps.sign_app.outputs.signedReleaseFile }}"
-
-      - name: Extract and Debug ENV
-        run: unzip -p ${{ steps.sign_app.outputs.signedReleaseFile }} | strings | grep ENV        
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
