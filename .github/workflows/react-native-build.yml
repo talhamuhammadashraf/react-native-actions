@@ -151,12 +151,15 @@ jobs:
           echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
 
       - name: Build iOS App
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           xcodebuild -workspace ios/react_native.xcworkspace \
                      -scheme react_native \
                      -sdk iphoneos \
                      -configuration Release \
                      -archivePath build/react_native.xcarchive \
+                     DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
                      archive
 
       - name: Export IPA
