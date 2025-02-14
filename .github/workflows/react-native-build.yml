@@ -16,6 +16,7 @@ jobs:
   build:
     name: Build Android APK/AAB
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}  # This enables environment-specific secrets
 
     steps:
       - name: Checkout Code
@@ -37,118 +38,55 @@ jobs:
       - name: Install Dependencies
         run: yarn
 
-      # - name: Copy secret files
-      #   env:
-      #     ENV_PERSONAL_BASE64: ${{ secrets.ENV_PERSONAL }}
-      #     ENV_PROFESSIONAL_BASE64: ${{ secrets.ENV_PROFESSIONAL }}
-          
-      #   run: |
-      #     ENV_PERSONAL_FILE="$RUNNER_TEMP/.env.personal"
-      #     ENV_PROFESSIONAL_FILE="$RUNNER_TEMP/.env.professional"
-          
-      #     if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
-      #     echo -n "$ENV_PERSONAL_BASE64" | base64 --decode > $ENV_PERSONAL_FILE
-      #     echo -n "Getting personal env"
-      #     cp $ENV_PERSONAL_FILE $GITHUB_WORKSPACE/.env.personal
-      #     elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
-      #     echo -n "$ENV_PROFESSIONAL_BASE64" | base64 --decode > $ENV_PROFESSIONAL_FILE
-      #     echo -n "Getting professional env"
-      #     cp $ENV_PROFESSIONAL_FILE $GITHUB_WORKSPACE/.env.professional
-      #     fi
-
-      - name: Copy secret files
+      - name: Copy Secret Files
         env:
-          ENV_PERSONAL_BASE64: ${{ secrets.ENV_PERSONAL }}
-          ENV_PROFESSIONAL_BASE64: ${{ secrets.ENV_PROFESSIONAL }}
-          
+          ENV_BASE64: ${{ secrets.ENV_BASE64 }}  # ✅ Single variable (assumed stored per environment)
         run: |
           ENV_FILE="$RUNNER_TEMP/.env"
-      
-          if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
-            echo -n "$ENV_PERSONAL_BASE64" | base64 --decode > $ENV_FILE
-            echo "Using personal env"
-          elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
-            echo -n "$ENV_PROFESSIONAL_BASE64" | base64 --decode > $ENV_FILE
-            echo "Using professional env"
-          fi
-      
-          cp $ENV_FILE $GITHUB_WORKSPACE/.env
-    
+          echo -n "$ENV_BASE64" | base64 --decode > $ENV_FILE
+          echo "Environment file created."
+          cp $ENV_FILE $GITHUB_WORKSPACE/.env  # ✅ Copy to root workspace
 
-
-  
-      - name: Verify Secret Variables
-        run: |
-          echo "Length of ENV_PERSONAL: ${#ENV_PERSONAL_BASE64}"
-          echo "Length of ENV_PROFESSIONAL: ${#ENV_PROFESSIONAL_BASE64}"
-        env:
-          ENV_PERSONAL_BASE64: ${{ secrets.ENV_PERSONAL }}
-          ENV_PROFESSIONAL_BASE64: ${{ secrets.ENV_PROFESSIONAL }}
-        
-      - name: Read .env File
+      - name: Verify .env File
         run: |
           if [ -f .env ]; then
-            echo ".env file exists!"
-            cat .env  # Show its contents (except secrets)
+            echo "✅ .env file exists!"
           else
-            echo ".env file is missing!"
+            echo "❌ .env file is missing!"
             exit 1
           fi
 
-      - name: Debug Secrets (Check if they exist)
+      - name: Update Build Number (Version Code)
         run: |
-          if [ -z "${{ secrets.ENV_PERSONAL }}" ]; then
-            echo "❌ ENV_PERSONAL is EMPTY or NOT SET!"
-          else
-            echo "✅ ENV_PERSONAL is set!"
-          fi
-      
-          if [ -z "${{ secrets.ENV_PROFESSIONAL }}" ]; then
-            echo "❌ ENV_PROFESSIONAL is EMPTY or NOT SET!"
-          else
-            echo "✅ ENV_PROFESSIONAL is set!"
-          fi
-        
-      # - name: Update Build Number (Version Code)
-      #   run: |
-      #     FILE=android/app/build.gradle
-      #     VERSION_CODE=$(grep -oP 'versionCode \K\d+' $FILE)
-      #     NEW_VERSION_CODE=$((VERSION_CODE + 1))
-      #     sed -i "s/versionCode $VERSION_CODE/versionCode $NEW_VERSION_CODE/g" $FILE
+          FILE=android/app/build.gradle
+          VERSION_CODE=$(grep -oP 'versionCode \K\d+' $FILE)
+          NEW_VERSION_CODE=$((VERSION_CODE + 1))
+          sed -i "s/versionCode $VERSION_CODE/versionCode $NEW_VERSION_CODE/g" $FILE
 
-      # - name: Build Release APK
-      #   run: |
-      #     cd android
-      #       if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
-      #       export ENVFILE=../.env.personal
-      #       ./gradlew assembleRelease
+      - name: Build Release APK
+        run: |
+          cd android
+          export ENVFILE=../.env  # Unified .env reference
+          ./gradlew assembleRelease
 
-      #       elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
-      #       export ENVFILE=../.env.professional
-      #       ./gradlew assembleRelease
-      #       fi
+      - name: Sign APK
+        uses: upup-company/apksigner-android@v1
+        id: sign_app
+        with:
+          releaseDirectory: android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE }}
+          alias: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
+          keyStorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
 
+      - name: Verify APK Path
+        run: |
+          echo "APK Path: ${{ steps.sign_app.outputs.signedReleaseFile }}"
 
-      # - name: Sign APK
-      #   uses: upup-company/apksigner-android@v1
-
-      #   id: sign_app
-      #   with:
-      #     releaseDirectory: android/app/build/outputs/apk/release
-      #     signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE }}
-      #     alias: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
-      #     keyStorePassword: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-      #     keyPassword: ${{ secrets.RELEASE_KEY_PASSWORD }}
-      #   env:
-      #     # override default build-tools version (29.0.3) -- optional
-      #     BUILD_TOOLS_VERSION: "34.0.0"
-
-      # - name: Verify APK path
-      #   run: echo ${{steps.sign_app.outputs.signedReleaseFile}}
-
-      # - name: Upload APK as Artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: android-release-apk
-      #     path: ${{steps.sign_app.outputs.signedReleaseFile}}
-
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
