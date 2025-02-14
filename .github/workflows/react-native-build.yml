@@ -37,25 +37,46 @@ jobs:
       - name: Install Dependencies
         run: yarn
 
+      # - name: Copy secret files
+      #   env:
+      #     ENV_PERSONAL_BASE64: ${{ secrets.ENV_PERSONAL }}
+      #     ENV_PROFESSIONAL_BASE64: ${{ secrets.ENV_PROFESSIONAL }}
+          
+      #   run: |
+      #     ENV_PERSONAL_FILE="$RUNNER_TEMP/.env.personal"
+      #     ENV_PROFESSIONAL_FILE="$RUNNER_TEMP/.env.professional"
+          
+      #     if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
+      #     echo -n "$ENV_PERSONAL_BASE64" | base64 --decode > $ENV_PERSONAL_FILE
+      #     echo -n "Getting personal env"
+      #     cp $ENV_PERSONAL_FILE $GITHUB_WORKSPACE/.env.personal
+      #     elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
+      #     echo -n "$ENV_PROFESSIONAL_BASE64" | base64 --decode > $ENV_PROFESSIONAL_FILE
+      #     echo -n "Getting professional env"
+      #     cp $ENV_PROFESSIONAL_FILE $GITHUB_WORKSPACE/.env.professional
+      #     fi
+
       - name: Copy secret files
         env:
           ENV_PERSONAL_BASE64: ${{ secrets.ENV_PERSONAL }}
           ENV_PROFESSIONAL_BASE64: ${{ secrets.ENV_PROFESSIONAL }}
           
         run: |
-          ENV_PERSONAL_FILE="$RUNNER_TEMP/.env.personal"
-          ENV_PROFESSIONAL_FILE="$RUNNER_TEMP/.env.professional"
-          
+          ENV_FILE="$RUNNER_TEMP/.env"
+      
           if [ "${{ github.event.inputs.environment }}" == "personal" ]; then
-          echo -n "$ENV_PERSONAL_BASE64" | base64 --decode > $ENV_PERSONAL_FILE
-          echo -n "Getting personal env"
-          cp $ENV_PERSONAL_FILE $GITHUB_WORKSPACE/.env.personal
+            echo -n "$ENV_PERSONAL_BASE64" | base64 --decode > $ENV_FILE
+            echo "Using personal env"
           elif [ "${{ github.event.inputs.environment }}" == "professional" ]; then
-          echo -n "$ENV_PROFESSIONAL_BASE64" | base64 --decode > $ENV_PROFESSIONAL_FILE
-          echo -n "Getting professional env"
-          cp $ENV_PROFESSIONAL_FILE $GITHUB_WORKSPACE/.env.professional
+            echo -n "$ENV_PROFESSIONAL_BASE64" | base64 --decode > $ENV_FILE
+            echo "Using professional env"
           fi
+      
+          cp $ENV_FILE $GITHUB_WORKSPACE/.env
+    
 
+
+  
       - name: Verify Secret Variables
         run: |
           echo "Length of ENV_PERSONAL: ${#ENV_PERSONAL_BASE64}"
