@@ -215,7 +215,7 @@ jobs:
               <key>provisioningProfiles</key>
               <dict>
                   <key>com.lrg.riskconcierge</key>
-                  <string>~/Library/MobileDevice/ProvisioningProfiles/profile.mobileprovision</string>
+                  <string>/Users/runner/Library/MobileDevice/ProvisioningProfiles/profile.mobileprovision</string>
               </dict>
           </dict>
           </plist>
