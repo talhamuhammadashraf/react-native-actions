@@ -225,6 +225,7 @@ jobs:
       - name: Build IPA
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          PROVISIONING_PROFILE_SPECIFIER: "~/Library/MobileDevice/ProvisioningProfiles/profile.mobileprovision"  # Use the path to the provisioning profile
         run: |
           ENVFILE=../.env
           xcodebuild -workspace ios/react_native.xcworkspace \
@@ -232,6 +233,7 @@ jobs:
                      -sdk iphoneos \
                      -configuration Release \
                      -archivePath build/react_native.xcarchive \
+                     PROVISIONING_PROFILE_SPECIFIER=$PROVISIONING_PROFILE_SPECIFIER \
                      DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
                      archive
 
