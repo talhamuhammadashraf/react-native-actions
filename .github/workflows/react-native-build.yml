@@ -23,6 +23,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+
       - name: Set Up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -30,16 +31,19 @@ jobs:
           java-version: "17"
           cache: "gradle"
 
+
       - name: Set Up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "yarn"
 
-      - name: Install Dependencies
-        run: yarn install --frozen-lockfile
 
-      - name: Copy Secret Files
+      - name: Install Dependencies
+        run: yarn install --immutable
+
+
+      - name: Copy Environment Secret Files  
         env:
           ENV_BASE64: ${{ secrets.ENV }}
         run: |
@@ -47,6 +51,7 @@ jobs:
           echo -n "$ENV_BASE64" | base64 --decode > $ENV_FILE
           echo "Environment file created from ${{ github.event.inputs.environment }}"
           cp $ENV_FILE $GITHUB_WORKSPACE/.env 
+          
 
       - name: Verify .env File
         run: |
@@ -57,18 +62,26 @@ jobs:
             exit 1
           fi
 
-      - name: Update Build Number (Version Code)
+      - name: Generate Unique Build Number
+        id: build_number
         run: |
-          FILE=android/app/build.gradle
-          VERSION_CODE=$(grep -oP 'versionCode \K\d+' $FILE)
-          NEW_VERSION_CODE=$((VERSION_CODE + 1))
-          sed -i "s/versionCode $VERSION_CODE/versionCode $NEW_VERSION_CODE/g" $FILE
+          DATE=$(date +'%d%m%y')
+          INCREMENTAL_NUMBER=$(printf "%02d" ${{ github.run_number }})
+          BUILD_NUMBER="${DATE}${INCREMENTAL_NUMBER}"
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
 
-      - name: Build Release APK
+
+      - name: Update Android Version Code
+        run: |
+          sed -i "s/versionCode [0-9]\+/versionCode $BUILD_NUMBER/" android/app/build.gradle
+
+
+      - name: Build APK
         run: |
           cd android
           export ENVFILE=../.env
           ./gradlew assembleRelease
+
 
       - name: Sign APK
         uses: upup-company/apksigner-android@v1
@@ -82,9 +95,11 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "34.0.0"
 
+
       - name: Verify APK Path
         run: |
           echo "APK Path: ${{ steps.sign_app.outputs.signedReleaseFile }}"
+
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
@@ -97,9 +112,11 @@ jobs:
     runs-on: macos-latest
     environment: ${{ github.event.inputs.environment }}
 
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
 
       - name: Set Up Node.js
         uses: actions/setup-node@v4
@@ -107,13 +124,16 @@ jobs:
           node-version: "22"
           cache: "yarn"
 
+
       - name: Install Dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
+
 
       - name: Install Pods
         run: cd ios && pod install --repo-update
 
-      - name: Copy Secret Files
+
+      - name: Copy Environment Secret Files
         env:
           ENV_BASE64: ${{ secrets.ENV }}
         run: |
@@ -122,14 +142,30 @@ jobs:
           echo "Environment file created from ${{ github.event.inputs.environment }}"
           cp $ENV_FILE $GITHUB_WORKSPACE/.env 
 
+          
       - name: Verify .env File
         run: |
           if [ -f .env ]; then
-            echo ".env file exists!"
+          echo ".env file exists!"
           else
-            echo ".env file is missing!"
-            exit 1
+          echo ".env file is missing!"
+          exit 1
           fi
+          
+
+      - name: Generate Unique Build Number
+        id: build_number
+        run: |
+          DATE=$(date +'%d%m%y')
+          INCREMENTAL_NUMBER=$(printf "%02d" ${{ github.run_number }})
+          BUILD_NUMBER="${DATE}${INCREMENTAL_NUMBER}"
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+
+          
+      - name: Update iOS Build Number
+        run: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/react_native/Info.plist
+
 
       - name: Install iOS Distribution Certificate
         env:
@@ -143,6 +179,7 @@ jobs:
           security import ios_certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
 
+
       - name: Install Provisioning Profile
         env:
           PROFILE_BASE64: ${{ secrets.IOS_ADHOC_PROFILE }}
@@ -150,10 +187,32 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
 
-      - name: Build iOS App
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Create exportOptions.plist
         run: |
+          cat <<EOF > ios/exportOptions.plist
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>ad-hoc</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>teamID</key>
+              <string>${{ secrets.APPLE_TEAM_ID }}</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>com.lrg.riskconcierge</key>
+                  <string>${{ secrets.IOS_ADHOC_PROFILE_NAME }}</string>
+              </dict>
+          </dict>
+          </plist>
+          EOF
+
+
+      - name: Build IPA
+        run: |
+          ENVFILE=../.env
           xcodebuild -workspace ios/react_native.xcworkspace \
                      -scheme react_native \
                      -sdk iphoneos \
@@ -162,12 +221,14 @@ jobs:
                      DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
                      archive
 
+
       - name: Export IPA
         run: |
           xcodebuild -exportArchive \
                      -archivePath build/react_native.xcarchive \
                      -exportOptionsPlist ios/exportOptions.plist \
                      -exportPath build
+
 
       - name: Upload IPA as Artifact
         uses: actions/upload-artifact@v4
