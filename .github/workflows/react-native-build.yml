@@ -211,6 +211,8 @@ jobs:
 
 
       - name: Build IPA
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           ENVFILE=../.env
           xcodebuild -workspace ios/react_native.xcworkspace \
