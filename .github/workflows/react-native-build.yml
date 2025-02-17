@@ -215,7 +215,7 @@ jobs:
               <key>provisioningProfiles</key>
               <dict>
                   <key>com.lrg.riskconcierge</key>
-                  <string>${{ secrets.IOS_ADHOC_PROFILE_NAME }}</string>
+                  <string>${{ secrets.IOS_ADHOC_PROFILE }}</string>
               </dict>
           </dict>
           </plist>
