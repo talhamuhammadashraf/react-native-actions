@@ -197,7 +197,7 @@ jobs:
           PROFILE_BASE64: ${{ secrets.IOS_ADHOC_PROFILE }}
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+          echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/ProvisioningProfiles/profile.mobileprovision
 
 
       - name: Create exportOptions.plist
@@ -215,7 +215,7 @@ jobs:
               <key>provisioningProfiles</key>
               <dict>
                   <key>com.lrg.riskconcierge</key>
-                  <string>${{ secrets.IOS_ADHOC_PROFILE }}</string>
+                  <string>~/Library/MobileDevice/ProvisioningProfiles/profile.mobileprovision</string>
               </dict>
           </dict>
           </plist>
