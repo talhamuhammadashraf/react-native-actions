@@ -198,6 +198,7 @@ jobs:
         run: |
           mkdir -p ~/Library/MobileDevice/ProvisioningProfiles
           echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/ProvisioningProfiles/profile.mobileprovision
+          echo cd ~/Library/MobileDevice/ProvisioningProfiles && ls -l
 
 
       - name: Create exportOptions.plist
