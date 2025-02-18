@@ -194,7 +194,7 @@ jobs:
 
       - name: Install Provisioning Profile
         env:
-          PROFILE_BASE64: ${{ secrets.IOS_ADHOC_PROFILE }}
+          PROFILE_BASE64: ${{ secrets.IOS_APPSTORE_PROFILE }}
         run: |
           mkdir -p ~/Library/MobileDevice/ProvisioningProfiles
           echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/ProvisioningProfiles/profile.mobileprovision
