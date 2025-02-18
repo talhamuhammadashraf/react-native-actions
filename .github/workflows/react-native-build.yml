@@ -210,6 +210,12 @@ jobs:
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
           
 
+      - name: Verify Certificates
+        run: security find-identity -v -p codesigning
+
+      - name: Verify Provisioning Profile
+        run: ls -l ~/Library/MobileDevice/Provisioning\ Profiles
+        
       - name: Build Archive
         run: |
             ENVFILE=../.env
