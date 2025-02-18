@@ -212,15 +212,16 @@ jobs:
 
       - name: Build Archive
         run: |
-            cd ios
             ENVFILE=../.env
+            cd ios
             xcodebuild -workspace react_native.xcworkspace \
             -scheme react_native \
             -archivePath $RUNNER_TEMP/react_native.xcarchive \
             -sdk iphoneos \
             -configuration Release \
             -destination generic/platform=iOS \
-            clean archive
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+            CODE_SIGN_IDENTITY="iPhone Distribution"
             
       - name: export ipa
         run: |
