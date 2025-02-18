@@ -216,11 +216,9 @@ jobs:
       - name: Verify Provisioning Profile
         run: ls -l ~/Library/MobileDevice/Provisioning\ Profiles
 
-      # - name: Print TeamName from Provisioning Profiles
-      #   run: |
-      #     security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision | \
-      #     /usr/libexec/PlistBuddy -c "Print TeamIdentifier:0" /dev/stdin
-
+      - name: Print TeamName from Provisioning Profiles
+        run: |
+          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
 
       - name: Build Archive
         run: |
@@ -313,11 +311,11 @@ jobs:
       #                -exportOptionsPlist ios/exportOptions.plist \
       #                -exportPath build
 
-      # - name: Clean up keychain and provisioning profile
-      #   if: ${{ always() }}
-      #   run: |
-      #     security delete-keychain $RUNNER_TEMP/build.keychain-db
-      #     rm ~/Library/MobileDevice/Provisioning\ Profiles/lrg_adhoc.mobileprovision
+      - name: Clean up keychain and provisioning profile
+        if: ${{ always() }}
+        run: |
+          security delete-keychain $RUNNER_TEMP/build.keychain-db
+          rm ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
 
       - name: Upload IPA as Artifact
         uses: actions/upload-artifact@v4
