@@ -194,11 +194,10 @@ jobs:
 
       - name: Install Provisioning Profile
         env:
-          PROFILE_BASE64: ${{ secrets.IOS_APPSTORE_PROFILE }}
+          PROFILE_BASE64: ${{ secrets.IOS_ADHOC_PROFILE }}
         run: |
-          mkdir -p ~/Library/MobileDevice/ProvisioningProfiles
-          echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/ProvisioningProfiles/profile.mobileprovision
-          echo cd ~/Library/MobileDevice/ProvisioningProfiles && ls -l
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/lrg_adhoc.mobileprovision
 
 
       - name: Create exportOptions.plist
@@ -208,7 +207,7 @@ jobs:
           <plist version="1.0">
           <dict>
               <key>method</key>
-              <string>ad-hoc</string>
+              <string>release-testing</string>
               <key>signingStyle</key>
               <string>manual</string>
               <key>teamID</key>
@@ -216,7 +215,7 @@ jobs:
               <key>provisioningProfiles</key>
               <dict>
                   <key>com.lrg.riskconcierge</key>
-                  <string>/Users/runner/Library/MobileDevice/ProvisioningProfiles/profile.mobileprovision</string>
+                  <string>/Users/runner/Library/MobileDevice/Provisioning\ Profiles/lrg_adhoc.mobileprovision</string>
               </dict>
           </dict>
           </plist>
@@ -226,7 +225,7 @@ jobs:
       - name: Build IPA
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          PROVISIONING_PROFILE_SPECIFIER: "~/Library/MobileDevice/ProvisioningProfiles/profile.mobileprovision"  # Use the path to the provisioning profile
+          PROVISIONING_PROFILE_SPECIFIER: "~/Library/MobileDevice/Provisioning\ Profiles/lrg_adhoc.mobileprovision"  # Use the path to the provisioning profile
         run: |
           ENVFILE=../.env
           xcodebuild -workspace ios/react_native.xcworkspace \
@@ -246,6 +245,11 @@ jobs:
                      -exportOptionsPlist ios/exportOptions.plist \
                      -exportPath build
 
+      - name: Clean up keychain and provisioning profile
+        if: ${{ always() }}
+        run: |
+          security delete-keychain $RUNNER_TEMP/build.keychain-db
+          rm ~/Library/MobileDevice/Provisioning\ Profiles/lrg_adhoc.mobileprovision
 
       - name: Upload IPA as Artifact
         uses: actions/upload-artifact@v4
