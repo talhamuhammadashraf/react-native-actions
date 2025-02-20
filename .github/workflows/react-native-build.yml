@@ -270,80 +270,8 @@ jobs:
           name: ios-release-ipa
           path: ${{ runner.temp }}/build/react_native.ipa
 
-      # - name: Install iOS Distribution Certificate
-      #   env:
-      #     CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE }}
-      #     CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
-      #   run: |
-      #     echo "$CERTIFICATE_BASE64" | base64 --decode > ios_certificate.p12
-      #     security create-keychain -p "" build.keychain
-      #     security default-keychain -s build.keychain
-      #     security unlock-keychain -p "" build.keychain
-      #     security import ios_certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-      #     security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
-
-
-      # - name: Install Provisioning Profile
-      #   env:
-      #     PROFILE_BASE64: ${{ secrets.IOS_ADHOC_PROFILE }}
-      #   run: |
-      #     mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-      #     echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/lrg_adhoc.mobileprovision
-
-
-      # - name: Create exportOptions.plist
-      #   run: |
-      #     cat <<EOF > ios/exportOptions.plist
-      #     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-      #     <plist version="1.0">
-      #     <dict>
-      #         <key>method</key>
-      #         <string>release-testing</string>
-      #         <key>signingStyle</key>
-      #         <string>manual</string>
-      #         <key>teamID</key>
-      #         <string>${{ secrets.APPLE_TEAM_ID }}</string>
-      #         <key>provisioningProfiles</key>
-      #         <dict>
-      #             <key>com.lrg.riskconcierge</key>
-      #             <string>/Users/runner/Library/MobileDevice/Provisioning\ Profiles/lrg_adhoc.mobileprovision</string>
-      #         </dict>
-      #     </dict>
-      #     </plist>
-      #     EOF
-
-
-      # - name: Build IPA
-      #   env:
-      #     APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      #     PROVISIONING_PROFILE_SPECIFIER: "~/Library/MobileDevice/Provisioning\ Profiles/lrg_adhoc.mobileprovision"  # Use the path to the provisioning profile
-      #   run: |
-      #     ENVFILE=../.env
-      #     xcodebuild -workspace ios/react_native.xcworkspace \
-      #                -scheme react_native \
-      #                -sdk iphoneos \
-      #                -configuration Release \
-      #                -archivePath build/react_native.xcarchive \
-      #                PROVISIONING_PROFILE_SPECIFIER=$PROVISIONING_PROFILE_SPECIFIER \
-      #                DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
-      #                archive
-
-
-      # - name: Export IPA
-      #   run: |
-      #     xcodebuild -exportArchive \
-      #                -archivePath build/react_native.xcarchive \
-      #                -exportOptionsPlist ios/exportOptions.plist \
-      #                -exportPath build
-
-      # - name: Clean up keychain and provisioning profile
-      #   if: ${{ always() }}
-      #   run: |
-      #     security delete-keychain $RUNNER_TEMP/build.keychain-db
-      #     rm ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
-
-      # - name: Upload IPA as Artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: ios-release-ipa
-      #     path: build/react_native.ipa
+      - name: Clean up keychain and provisioning profile
+        if: ${{ always() }}
+        run: |
+          security delete-keychain $RUNNER_TEMP/build.keychain-db
+          rm ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
