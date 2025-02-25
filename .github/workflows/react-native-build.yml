@@ -1,10 +1,6 @@
 name: Build
 
 on:
-  push:
-    branches:
-      - qa  # Automatically triggers on push to QA branch
-
   workflow_dispatch:
     inputs:
       environment:
