@@ -7,14 +7,7 @@
 
 import React from 'react';
 
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import {SafeAreaView, ScrollView, StatusBar, Text, View} from 'react-native';
 
 import {Colors, LearnMoreLinks} from 'react-native/Libraries/NewAppScreen';
 import Component from './src/components';
