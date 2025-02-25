@@ -21,16 +21,14 @@ import Component from './src/components';
 import Config from 'react-native-config';
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
   const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    backgroundColor: Colors.lighter,
   };
 
   return (
     <SafeAreaView style={backgroundStyle}>
       <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        barStyle="light-content"
         backgroundColor={backgroundStyle.backgroundColor}
       />
       <ScrollView
@@ -38,7 +36,7 @@ function App(): React.JSX.Element {
         style={backgroundStyle}>
         <View
           style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
+            backgroundColor: Colors.white,
           }}>
           {
             <View>
