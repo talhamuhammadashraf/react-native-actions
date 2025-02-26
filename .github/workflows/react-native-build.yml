@@ -254,8 +254,13 @@ jobs:
           </dict>
           </plist>
           EOF
+          
+      - name: Debug ExportOptions.plist
+        run: cat ios/ExportOptions.plist
 
-
+      - name: Debug Installed Provisioning Profile
+        run: security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
+      
       - name: Build Archive
         run: |
             ENVFILE=../.env
