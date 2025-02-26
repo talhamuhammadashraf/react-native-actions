@@ -184,7 +184,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_CERTIFICATE_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
-          PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_ADHOC_PROFILE }}
+          PROVISIONING_PROFILE_BASE64: ${{ github.event.inputs.environment == 'prod' && secrets.IOS_APPSTORE_PROFILE || secrets.IOS_ADHOC_PROFILE }}
           KEYCHAIN_PASSWORD: 123456
         run: |
           # create variables
@@ -218,6 +218,14 @@ jobs:
 
       - name: Create Export Options Plist
         run: |
+          if [ "${{ github.event.inputs.environment }}" == "prod" ]; then
+            PROVISIONING_PROFILE="lrg_appstore"
+            EXPORT_METHOD="app-store"
+          else
+            PROVISIONING_PROFILE="lrg_adhoc"
+            EXPORT_METHOD="release-testing"
+          fi
+
           cat <<EOF > ios/ExportOptions.plist
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -225,11 +233,11 @@ jobs:
               <key>destination</key>
               <string>export</string>
               <key>method</key>
-              <string>release-testing</string>
+              <string>$EXPORT_METHOD</string>
               <key>provisioningProfiles</key>
               <dict>
                 <key>com.lrg.riskconcierge</key>
-                <string>lrg_adhoc</string>
+                <string>$PROVISIONING_PROFILE</string>
               </dict>
               <key>signingCertificate</key>
               <string>Apple Distribution</string>
@@ -238,15 +246,13 @@ jobs:
               <key>stripSwiftSymbols</key>
               <true/>
               <key>teamID</key>
-              <string>CLXH3E5RD8</string>
+              <string>${{ secrets.APPLE_TEAM_ID }}</string>
               <key>thinning</key>
               <string>&lt;none&gt;</string>
           </dict>
           </plist>
           EOF
-      # - name: Print TeamName from Provisioning Profiles
-      #   run: |
-      #     security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
+
 
       - name: Build Archive
         run: |
@@ -271,7 +277,7 @@ jobs:
           path: ${{ runner.temp }}/build/react_native.ipa
 
       - name: Clean up keychain and provisioning profile
-        if: ${{ always() }}
+        if: always()
         run: |
           security delete-keychain $RUNNER_TEMP/app-signing.keychain-db
           rm ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
