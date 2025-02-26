@@ -233,8 +233,8 @@ jobs:
           <plist version="1.0">
           <dict>
               <key>destination</key>
-              <string>export</string>
-              <key>$EXPORT_METHOD</key>
+              <string>$DESTINATION</string>
+              <key>method</key>
               <string>$EXPORT_METHOD</string>
               <key>provisioningProfiles</key>
               <dict>
