@@ -221,9 +221,11 @@ jobs:
           if [ "${{ github.event.inputs.environment }}" == "prod" ]; then
             PROVISIONING_PROFILE="lrg_appstore"
             EXPORT_METHOD="app-store"
+            DESTINATION="upload" 
           else
             PROVISIONING_PROFILE="lrg_adhoc"
             EXPORT_METHOD="release-testing"
+            DESTINATION="export"
           fi
 
           cat <<EOF > ios/ExportOptions.plist
@@ -232,7 +234,7 @@ jobs:
           <dict>
               <key>destination</key>
               <string>export</string>
-              <key>method</key>
+              <key>$EXPORT_METHOD</key>
               <string>$EXPORT_METHOD</string>
               <key>provisioningProfiles</key>
               <dict>
