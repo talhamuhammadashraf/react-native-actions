@@ -223,7 +223,7 @@ jobs:
           <plist version="1.0">
           <dict>
               <key>destination</key>
-              <string>upload</string>
+              <string>none</string>
               <key>method</key>
               <string>app-store-connect</string>
               <key>provisioningProfiles</key>
