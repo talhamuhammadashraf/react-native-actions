@@ -225,7 +225,7 @@ jobs:
               <key>destination</key>
               <string>upload</string>
               <key>method</key>
-              <string>app-store</string>
+              <string>app-store-connect</string>
               <key>provisioningProfiles</key>
               <dict>
                 <key>com.lrg.riskconcierge</key>
