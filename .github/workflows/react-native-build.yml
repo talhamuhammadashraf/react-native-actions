@@ -298,6 +298,7 @@ jobs:
           path: ${{ runner.temp }}/build/react_native.ipa
 
       - name: Upload to TestFlight
+        if: github.event.inputs.environment == 'prod'
         env:
           APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
           APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
