@@ -210,6 +210,15 @@ jobs:
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
           
 
+      - name: Install private API key P8
+        env:
+          APPLE_KEY_BASE64: ${{ secrets.APPLE_KEY_BASE64 }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$APPLE_KEY_BASE64" | base64 --decode > ~/private_keys/AuthKey_$APPLE_KEY_ID.p8
+
+
       - name: Verify Certificates
         run: security find-identity -v -p codesigning
 
