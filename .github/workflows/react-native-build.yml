@@ -229,8 +229,8 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.environment }}" == "prod" ]; then
             PROVISIONING_PROFILE="lrg_appstore"
-            EXPORT_METHOD="app-store"
-            DESTINATION="upload" 
+            EXPORT_METHOD="app-store-connect"
+            DESTINATION="none" 
           else
             PROVISIONING_PROFILE="lrg_adhoc"
             EXPORT_METHOD="release-testing"
