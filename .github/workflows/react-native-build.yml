@@ -297,6 +297,16 @@ jobs:
           name: ios-release-ipa
           path: ${{ runner.temp }}/build/react_native.ipa
 
+      - name: Upload to TestFlight
+        env:
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+        run: |
+          xcrun altool --output-format xml --upload-app -t ios -f "$RUNNER_TEMP/build/react_native.ipa" \
+          --apiKey "$APPLE_KEY_ID" \
+          --apiIssuer "$APPLE_ISSUER_ID" \
+          --verbose
+
       - name: Clean up keychain and provisioning profile
         if: always()
         run: |
