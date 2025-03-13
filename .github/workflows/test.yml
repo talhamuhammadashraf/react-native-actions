@@ -1,9 +1,7 @@
 name: Build
 
 on:
-  push:
-    branches:
-      - test01
+    workflow_dispatch:
 
 jobs:
   build:
