@@ -73,18 +73,9 @@ jobs:
             exit 1
           fi
 
-      - name: Generate Unique Build Number
-        id: build_number
-        run: |
-          DATE=$(date +'%d%m%y')
-          INCREMENTAL_NUMBER=$(printf "%02d" $(( ${{ github.run_number }} % 100 )))
-          BUILD_NUMBER="${DATE}${INCREMENTAL_NUMBER}"
-          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-
-
       - name: Update Android Version Code
         run: |
-          sed -i "s/versionCode [0-9]\+/versionCode $BUILD_NUMBER/" android/app/build.gradle
+          sed -i "s/versionCode [0-9]\+/versionCode ${{ github.run_number }}/" android/app/build.gradle
 
 
       - name: Build APK
@@ -165,18 +156,9 @@ jobs:
           fi
           
 
-      - name: Generate Unique Build Number
-        id: build_number
-        run: |
-          DATE=$(date +'%d%m%y')
-          INCREMENTAL_NUMBER=$(printf "%02d" $(( ${{ github.run_number }} % 100 )))
-          BUILD_NUMBER="${DATE}${INCREMENTAL_NUMBER}"
-          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-
-          
       - name: Update iOS Build Number
         run: |
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/react_native/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" ios/react_native/Info.plist
 
 
       - name: Install iOS Distribution Certificate and Provisioning Profile
