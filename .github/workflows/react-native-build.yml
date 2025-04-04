@@ -77,7 +77,7 @@ jobs:
         id: build_number
         run: |
           DATE=$(date +'%d%m%y')
-          INCREMENTAL_NUMBER=$(printf "%02d" ${{ github.run_number }})
+          INCREMENTAL_NUMBER=$(printf "%02d" $(( ${{ github.run_number }} % 100 )))
           BUILD_NUMBER="${DATE}${INCREMENTAL_NUMBER}"
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
 
@@ -169,7 +169,7 @@ jobs:
         id: build_number
         run: |
           DATE=$(date +'%d%m%y')
-          INCREMENTAL_NUMBER=$(printf "%02d" ${{ github.run_number }})
+          INCREMENTAL_NUMBER=$(printf "%02d" $(( ${{ github.run_number }} % 100 )))
           BUILD_NUMBER="${DATE}${INCREMENTAL_NUMBER}"
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
 
